@@ -212,6 +212,16 @@ pip install -r requirements.txt
 python3.8 app.py          # 默认 5000 端口，可用 PORT 环境变量覆盖
 ```
 
+### 运行测试
+
+SDK 的协议、适配器与会话逻辑都有单元测试，不需要连接任何硬件：
+
+```bash
+python -m unittest discover -s tests -v     # 只依赖标准库
+# 或者
+pip install -e ".[dev]" && pytest
+```
+
 ### 开机自启（树莓派）
 
 ```ini

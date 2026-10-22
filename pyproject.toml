@@ -33,3 +33,6 @@ emg-sdk = "emg_sdk.cli:main"
 
 [tool.setuptools]
 packages = ["emg_sdk", "emg_sdk.adapters"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
