@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "emg-sdk"
+version = "2.0.0"
+description = "手势控制统一 SDK：把 App 的语义命令翻译成各被控对象的调用（Go2 / Go2-W / 侦察球 / 机械车 / PPT）"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+keywords = ["semg", "emg", "gesture", "robot", "udp", "unitree"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Scientific/Engineering :: Human Machine Interfaces",
+]
+dependencies = []
+
+[project.optional-dependencies]
+# PPT 适配器在非 Windows 平台用 pynput 发键；Windows 走 ctypes，无需额外依赖
+ppt = ["pynput>=1.7"]
+dev = ["pytest>=7.0"]
+
+# Go2 / Go2-W 需要宇树官方 SDK（不在 PyPI，按官方说明安装后再用）：
+#   git clone https://github.com/unitreerobotics/unitree_sdk2_python
+#   cd unitree_sdk2_python && pip install -e .
+go2 = []
+
+[project.scripts]
+emg-sdk = "emg_sdk.cli:main"
+
+[tool.setuptools]
+packages = ["emg_sdk", "emg_sdk.adapters"]

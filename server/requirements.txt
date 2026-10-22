@@ -1,0 +1,12 @@
+# Server dependencies (Python 3.8)
+flask>=2.3.0
+werkzeug>=2.3.0
+
+# Training dependencies
+# IMPORTANT: torch must match Android pytorch_android version (1.13.1).
+# TorchScript only guarantees "newer runtime loads older model";
+# exporting with a newer torch than the phone runtime will fail to load.
+# torch 1.13.1 supports Python 3.7-3.10 only (server runs Python 3.8).
+torch==1.13.1
+scipy>=1.10.0,<1.11
+numpy>=1.21,<1.25

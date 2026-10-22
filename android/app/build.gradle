@@ -1,0 +1,33 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'cn.semg.armband'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'cn.semg.armband'
+        minSdk 26
+        targetSdk 34
+        versionCode 15
+        versionName '2.0.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    // PyTorch Mobile 推理库，加载 TorchScript (.pt) 模型做 CNN1D 前向推理
+    implementation 'org.pytorch:pytorch_android:1.13.1'
+}

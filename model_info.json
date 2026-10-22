@@ -1,0 +1,14 @@
+{
+  "labels": [
+    "ÎÕÈ­",
+    "ÊÖÕÆ",
+    "ÏòÓÒ",
+    "Ïò×ó"
+  ],
+  "num_classes": 4,
+  "window_size": 100,
+  "fs": 500,
+  "best_accuracy": 100.0,
+  "best_epoch": 4,
+  "training_time": 2.080498
+}

@@ -1,0 +1,92 @@
+# ===== 系统 / 编辑器 =====
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+*.whl
+
+# ===== Android / Gradle =====
+.gradle/
+local.properties
+captures/
+.cxx/
+*.apk
+*.aab
+*.hprof
+
+# 仓库内自带的 Android SDK 与 JDK（1.6 GB，不入库）
+android/.tools/
+
+# ===== 模型权重与训练产物（走 Releases，不进 git）=====
+*.pth
+*.pt
+*.onnx
+*.joblib
+*.pkl
+*.h5
+*.npz
+*.npy
+
+# 跨用户研究的缓存、结果与分析图（只保留脚本）
+base_cross_user/data_cache*/
+base_cross_user/results/
+base_cross_user/analysis/
+
+# ===== 采集数据 =====
+recordings/
+control_PPT/dataset/
+control_PPT/*.csv
+
+# 生成的演示文稿（需要时从 Releases 下载）
+control_PPT/**/*.pptx
+
+# server 的备份副本
+云端/
+
+# ===== 固件工程与旧采集数据（与 App/SDK 无关）=====
+go2/
+go2.8/
+**/Sep_EMG_Data/
+
+# 嵌套 git 仓库：改用 submodule 或按官方说明安装 SDK
+unitree_sdk2/
+
+# ===== 内部文档 =====
+.trae/
+
+# macOS 打包残留
+__MACOSX/
+
+# ===== 日志 / 临时文件 =====
+*.log
+nohup.out
+*.zip
+*.tar
+*.tar.gz
+tmp/
+.tmp/
+
+# ===== 密钥 / 运行时数据库 =====
+.env
+*.token
+secrets.properties
+*.db
+*.sqlite
+*.sqlite3

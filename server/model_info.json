@@ -1,0 +1,15 @@
+{
+  "labels": [
+    "休息",
+    "握拳",
+    "手掌",
+    "向右",
+    "向左"
+  ],
+  "num_classes": 5,
+  "window_size": 100,
+  "fs": 500,
+  "best_accuracy": 100.0,
+  "best_epoch": 5,
+  "training_time": 1.987595
+}

@@ -1,0 +1,22 @@
+# ==========================================================
+# control_PPT · 独立演示程序依赖
+#
+#   conda create -n emg_demo python=3.8 -y
+#   conda activate emg_demo
+#   pip install -r requirements.txt
+# ==========================================================
+
+# BLE 读取（肌电臂环，服务 FFE0 / 通知 FFE2）
+bleak>=0.21
+
+# RBF SVM 训练与推理
+scikit-learn>=1.1
+numpy>=1.21,<1.25
+scipy>=1.10,<1.11
+joblib>=1.2
+
+# PPT 生成（build_ppt.py）
+python-pptx>=0.6.21
+
+# 手势控制 PPT 翻页（ppt_control.py）
+pynput>=1.7
