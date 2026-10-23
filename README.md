@@ -40,17 +40,22 @@
 App 端可选的本地模型：最近质心、线性 SVM、RBF SVM（LIBSVM）；也可从云端下载
 TorchScript 模型（CNN-Transformer）。
 
+SDK 另有可选的**肌电波形监控**：App 勾选「同步肌电到 SDK」后，浏览器即可查看
+8 通道实时波形（见「A. 第 4 步」）。
+
 ## 目录结构
 
 ```
 .
-├─ emg_sdk/            Python SDK：协议、UDP 服务端、设备适配器
+├─ emg_sdk/            Python SDK：协议、UDP 服务端、设备适配器、波形监控
 ├─ android/            Android App 源码（Java）
 ├─ server/             Flask 训练服务（上传 CSV → 训练 → 下发模型）
 ├─ control_PPT/        离线演示套件：BLE 采集 + RBF 训练 + 翻页/控制
 ├─ base_cross_user/    跨用户 / 零样本研究的训练与消融脚本
 ├─ ball_files/         侦察球协议的参考实现（Python）
+├─ tests/              SDK 单元测试（协议 / 适配器 / 会话 / 波形）
 ├─ docs/protocol.md    App ↔ SDK 协议（v2），跨语言契约
+├─ build_app.bat       Windows 一键编译 App
 ├─ pyproject.toml      SDK 打包配置
 └─ udp_go2_bridge*.py  旧版中转脚本（可被 emg_sdk 替代）
 ```
@@ -210,7 +215,8 @@ App 侧不需要改代码：设备类型按后端返回的 `capabilities.actions
 
 ### Android App
 
-需要 Android SDK 34 与 JDK 17。
+需要 Android SDK 34 与 JDK 17（Java 11~17 均可；**JDK 8 和 21+ 不行**，
+Gradle 7.3.3 不支持）。
 
 **Windows 一键脚本**（推荐，双击或在仓库根目录运行）：
 
@@ -287,6 +293,9 @@ WantedBy=multi-user.target
 | 侦察球不动 | 确认 `eth0:1` 为 `192.168.1.50`；固件 lease 约 0.4s，需 20Hz 续发；速度上限 1000 |
 | PPT 不翻页 | 焦点是否在放映窗口（加 `--require-window`）；是否已按 F5 进入放映 |
 | 卡顿后动作扎堆 | App 已改为「一次通知最多预测一次」，若仍有，检查 2.4G 干扰与 BLE 距离 |
+| 波形页面一直「等待数据」 | App 未勾选「同步肌电到 SDK」；IP/端口与 SDK 启动参数不一致；监控端口（默认 8080）被占用 |
+| 编译报 `SDK location not found` | 用 `build_app.bat`，或设置 `ANDROID_HOME` / 写 `android/local.properties` |
+| 编译报 `requires Java 11` | `JAVA_HOME` 指向了 JDK 8，换成 JDK 17（脚本会自动跳过 8 和 21+） |
 
 **安全提示**：首次带载前请架空设备、清空周边并准备物理急停；`deadman_ms` 建议
 300~800 ms，不要为了「跟手」调得过大。

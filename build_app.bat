@@ -41,18 +41,32 @@ for /d %%D in ("%ProgramFiles%\Eclipse Adoptium\jdk-17*") do call :try_jdk "%%D"
 
 if defined JDK_HOME goto :jdk_found
 
-where java >nul 2>nul
-if errorlevel 1 (
-    echo [ERROR] JDK 17 not found.
-    echo         Install JDK 17 or set JAVA_HOME.
-    goto :fail
-)
-echo [1/3] JDK : using java from PATH
+rem fallback: java on PATH (must also be 11-17)
+set "JVER="
+for /f "tokens=3" %%V in ('java -version 2^>^&1 ^| findstr /i "version"') do if not defined JVER set "JVER=%%~V"
+if not defined JVER goto :no_jdk
+set JRAW=%JVER:"=%
+if "%JRAW:~0,2%"=="1." set "JRAW=%JRAW:~2%"
+set "JMAJOR="
+for /f "tokens=1 delims=._-+" %%M in ("%JRAW%") do set "JMAJOR=%%M"
+set "JVER="
+if not defined JMAJOR goto :no_jdk
+if %JMAJOR% LSS 11 goto :no_jdk
+if %JMAJOR% GTR 17 goto :no_jdk
+echo [1/3] JDK : java from PATH (%JRAW%)
 goto :jdk_done
+
+:no_jdk
+echo [ERROR] No usable JDK found.
+echo         Current JAVA_HOME: %JAVA_HOME%
+echo         Android Gradle Plugin 7.2 / Gradle 7.3 need Java 11-17.
+echo         JDK 8 and JDK 21+ will NOT work. Please install JDK 17
+echo         (Temurin / Corretto / Oracle) and set JAVA_HOME to it.
+goto :fail
 
 :jdk_found
 set "JAVA_HOME=%JDK_HOME%"
-echo [1/3] JDK : %JDK_HOME%
+echo [1/3] JDK : %JDK_HOME% (%JDK_VER%)
 
 :jdk_done
 
@@ -151,5 +165,17 @@ exit /b 1
 :try_jdk
 if defined JDK_HOME goto :eof
 if "%~1"=="" goto :eof
-if exist "%~1\bin\java.exe" set "JDK_HOME=%~1"
+if not exist "%~1\bin\java.exe" goto :eof
+set "TV="
+if exist "%~1\release" for /f "tokens=2 delims==" %%V in ('findstr /b /i "JAVA_VERSION" "%~1\release"') do if not defined TV set "TV=%%~V"
+if not defined TV goto :eof
+set TRAW=%TV:"=%
+if "%TRAW:~0,2%"=="1." set "TRAW=%TRAW:~2%"
+set "TMAJOR="
+for /f "tokens=1 delims=._-+" %%M in ("%TRAW%") do set "TMAJOR=%%M"
+if not defined TMAJOR goto :eof
+if %TMAJOR% LSS 11 goto :eof
+if %TMAJOR% GTR 17 goto :eof
+set "JDK_HOME=%~1"
+set "JDK_VER=%TRAW%"
 goto :eof
