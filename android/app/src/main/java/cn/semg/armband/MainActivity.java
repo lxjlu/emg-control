@@ -32,6 +32,8 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import cn.semg.armband.control.EmgStreamer;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -83,6 +85,8 @@ public final class MainActivity extends Activity implements BleArmbandClient.Lis
     private BleArmbandClient ble;
     private ClassicArmbandClient classic;
     private G20HttpController g20;
+    private EmgStreamer streamer;          // 肌电流转发（浏览器查看 8 通道波形）
+    private CheckBox streamCheck;
     private RecordingStore store;
     private RecordingStore.Session recording;
     private boolean rawRecording;          // 当前记录是否为"记录数据"（原始数据，不选标签）
@@ -610,6 +614,14 @@ public final class MainActivity extends Activity implements BleArmbandClient.Lis
         g20Button = button("启用控制", true);
         g20Button.setOnClickListener(view -> toggleG20Control());
         g20Card.addView(g20Button, matchHeight(dp(46), 0, dp(8)));
+
+        streamCheck = new CheckBox(this);
+        streamCheck.setText("同步肌电到 SDK（浏览器看 8 通道波形）");
+        streamCheck.setTextColor(INK);
+        streamCheck.setTextSize(12);
+        streamCheck.setOnCheckedChangeListener((view, checked) -> toggleEmgStream(checked));
+        g20Card.addView(streamCheck, matchWrap(0, dp(4)));
+
         g20Card.addView(text("提示：请先配置动作映射。识别不确定、数据中断或退出应用时自动停止。", 11, MUTED));
 
         // 手动控制面板
@@ -822,6 +834,8 @@ public final class MainActivity extends Activity implements BleArmbandClient.Lis
         lastSampleIndex = frame.firstSampleIndex + frame.samples.length - 1;
         lastValues = frame.samples[frame.samples.length - 1].clone();
         waveform.addSamples(frame.samples);
+        EmgStreamer activeStreamer = streamer;
+        if (activeStreamer != null) activeStreamer.feed(frame.samples);
         RecordingStore.Session active = recording;
         if (active != null) {
             try { active.append(frame.firstSampleIndex, frame.samples); }
@@ -4636,6 +4650,45 @@ public final class MainActivity extends Activity implements BleArmbandClient.Lis
         g20.sendManualCommand(command);
     }
 
+    /** 开启/关闭肌电流转发：把原始样本推给 SDK，浏览器可看 8 通道实时波形。 */
+    private void toggleEmgStream(boolean enabled) {
+        if (!enabled) {
+            if (streamer != null) {
+                streamer.close();
+                streamer = null;
+                toast("已停止推送肌电");
+            }
+            return;
+        }
+        if (!connected || samples == 0) {
+            toast("请先连接手环并确认已有数据");
+            if (streamCheck != null) streamCheck.setChecked(false);
+            return;
+        }
+        String ip = ipInput.getText().toString().trim();
+        if (ip.isEmpty()) {
+            toast("请先填写 SDK 所在电脑或树莓派的 IP");
+            if (streamCheck != null) streamCheck.setChecked(false);
+            return;
+        }
+        int port;
+        try {
+            port = Integer.parseInt(portInput.getText().toString().trim());
+            if (port < 1 || port > 65535) throw new NumberFormatException();
+        } catch (NumberFormatException error) {
+            toast("端口格式错误（1-65535）");
+            if (streamCheck != null) streamCheck.setChecked(false);
+            return;
+        }
+        try {
+            streamer = new EmgStreamer(ip, port, 8, 500);
+            toast("已开始推送肌电，浏览器打开 http://" + ip + ":8080");
+        } catch (Exception error) {
+            toast("无法推送肌电: " + error.getMessage());
+            if (streamCheck != null) streamCheck.setChecked(false);
+        }
+    }
+
     private String getLocalIpAddress() {
         try {
             java.util.Enumeration<java.net.NetworkInterface> interfaces =
@@ -4795,6 +4848,7 @@ public final class MainActivity extends Activity implements BleArmbandClient.Lis
 
     @Override protected void onDestroy() {
         if (recording != null) finishRecording();
+        if (streamer != null) { streamer.close(); streamer = null; }
         if (g20 != null) g20.close();
         ble.close();
         classic.disconnect();

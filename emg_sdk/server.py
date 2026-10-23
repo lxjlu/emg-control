@@ -14,17 +14,19 @@ import socket
 import time
 
 from .protocol import (ACTION_HELLO, ACTION_MOVE, ACTION_STOP, DISCRETE_ACTIONS,
-                       PROTOCOL_VERSION, MessageError, parse)
+                       PROTOCOL_VERSION, STREAM_TYPE, MessageError, parse)
+from .stream import decode_stream
 
 
 class CommandServer:
     def __init__(self, adapter, host="0.0.0.0", port=8888,
-                 token=None, ack=True, log=print):
+                 token=None, ack=True, monitor=None, log=print):
         self.adapter = adapter
         self.host = host
         self.port = port
         self.token = token
         self.ack = ack
+        self.monitor = monitor
         self.log = log
 
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -39,6 +41,7 @@ class CommandServer:
         self._last_seq = None
         self._last_logged_motion = (None, None)
         self._raw_mode = False          # 收到旧版侦察球包时，交给 App 自己驱动心跳
+        self._stream_warned = False
         self._running = True
 
     # ------------------------------------------------------------------
@@ -57,6 +60,8 @@ class CommandServer:
         next_tick = time.monotonic()
 
         try:
+            if self.monitor is not None:
+                self.monitor.start()
             while self._running:
                 timeout = max(0.0, next_tick - time.monotonic())
                 readable, _, _ = select.select([self._sock], [], [], min(timeout, 0.02))
@@ -80,12 +85,14 @@ class CommandServer:
             except Exception as error:
                 self.log(f"关闭适配器异常: {error}")
             self._sock.close()
+            if self.monitor is not None:
+                self.monitor.stop()
             self.log("已退出")
 
     def _drain(self):
         for _ in range(50):
             try:
-                data, addr = self._sock.recvfrom(2048)
+                data, addr = self._sock.recvfrom(8192)
             except BlockingIOError:
                 return
             except ConnectionResetError:
@@ -107,6 +114,10 @@ class CommandServer:
 
         if self.token and message["token"] != self.token:
             self.log(f"忽略 token 不匹配的报文 来自 {addr[0]}:{addr[1]}")
+            return
+
+        if message["kind"] == STREAM_TYPE:
+            self._handle_stream(message)
             return
 
         if message["kind"] == "raw":
@@ -162,6 +173,19 @@ class CommandServer:
             return
 
         self._reply(addr, {"ok": True, "act": action})
+
+    def _handle_stream(self, message):
+        if self.monitor is None:
+            if not self._stream_warned:
+                self._stream_warned = True
+                self.log("收到肌电流，但未启用监控（启动时加 --monitor 8080 可查看波形）")
+            return
+        try:
+            samples, rate, channels = decode_stream(message["body"])
+        except MessageError as error:
+            self.log(f"忽略无效肌电流: {error}")
+            return
+        self.monitor.push(samples, rate, channels)
 
     def _publish(self):
         adapter = self.adapter

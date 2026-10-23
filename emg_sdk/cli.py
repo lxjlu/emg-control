@@ -4,6 +4,8 @@
     python -m emg_sdk list
     python -m emg_sdk run --adapter go2 --port 8888
     python -m emg_sdk run --adapter ball --dry-run
+    python -m emg_sdk run --adapter go2 --port 8888 --monitor 8080
+    python -m emg_sdk monitor --port 8888 --http-port 8080
     python -m emg_sdk send --host 192.168.10.1 --act move --vx 0.6 --repeat 20
     python -m emg_sdk send --host 192.168.10.1 --act hello --wait
 """
@@ -69,8 +71,22 @@ def cmd_list(_args):
 
 def cmd_run(args):
     adapter = build_adapter(args.adapter, args)
+    monitor = None
+    if args.monitor:
+        from .monitor import EmgMonitor
+        monitor = EmgMonitor(http_port=args.monitor, log=log)
     server = CommandServer(adapter, host=args.host, port=args.port,
-                           token=args.token, ack=not args.no_ack, log=log)
+                           token=args.token, ack=not args.no_ack,
+                           monitor=monitor, log=log)
+    server.serve_forever()
+    return 0
+
+
+def cmd_monitor(args):
+    from .monitor import EmgMonitor, MonitorAdapter
+    monitor = EmgMonitor(http_port=args.http_port, log=log)
+    server = CommandServer(MonitorAdapter(log=log), host=args.host, port=args.port,
+                           token=args.token, monitor=monitor, log=log)
     server.serve_forever()
     return 0
 
@@ -143,7 +159,17 @@ def build_parser():
                      help="PPT：找不到 PPT/WPS 窗口时不发键")
     run.add_argument("--restore-screen", action="store_true",
                      help="PPT：退出时按一次空格，尝试恢复黑屏/白屏")
+    run.add_argument("--monitor", type=int, nargs="?", const=8080, default=None,
+                     metavar="HTTP_PORT",
+                     help="同时开启肌电波形网页（默认端口 8080）")
     run.set_defaults(func=cmd_run)
+
+    watch = sub.add_parser("monitor", help="只看 8 通道肌电波形，不驱动设备")
+    watch.add_argument("--host", default="0.0.0.0", help="监听地址（默认 0.0.0.0）")
+    watch.add_argument("--port", type=int, default=8888, help="接收 App 的 UDP 端口（默认 8888）")
+    watch.add_argument("--http-port", type=int, default=8080, help="波形网页端口（默认 8080）")
+    watch.add_argument("--token", default=None, help="与 App 约定的共享 token")
+    watch.set_defaults(func=cmd_monitor)
 
     send = sub.add_parser("send", help="发送一条语义命令（调试用）")
     send.add_argument("--host", required=True, help="SDK 所在主机 IP")

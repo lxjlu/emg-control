@@ -106,7 +106,23 @@ emg-sdk send --host 127.0.0.1 --port 8899 --act move --vx 0.6 --repeat 20
 emg-sdk send --host 127.0.0.1 --port 8899 --act hello --wait
 ```
 
-**4）手机端**
+**4）可选：浏览器查看 8 通道肌电波形**
+
+App 采集时可以顺手把原始样本推给 SDK，用来确认电极接触和信号质量：
+
+```bash
+# 在任意适配器上附加网页监控（默认端口 8080）
+emg-sdk run --adapter go2 --port 8888 --monitor
+
+# 或者只想看波形，不驱动设备
+emg-sdk monitor --port 8888 --http-port 8080
+```
+
+然后在 App 控制页勾选「同步肌电到 SDK」，浏览器打开 `http://<SDK 主机 IP>:8080`。
+页面会实时画出 8 条波形，并显示采样率、样本计数与连接状态。推送的是原始
+int16，不参与识别和控制，取消勾选即停止。
+
+**5）手机端**
 
 安装 `app-debug.apk`，在控制页填：
 
@@ -175,6 +191,9 @@ App 侧不需要改代码：设备类型按后端返回的 `capabilities.actions
 
 // 能力查询
 {"v":2,"act":"hello"}
+
+// 肌电波形流（可选，不参与心跳）
+{"v":2,"type":"stream","seq":1,"rate":500,"ch":8,"n":25,"data":"<base64 int16>"}
 ```
 
 三条时序规则：

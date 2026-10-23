@@ -7,6 +7,7 @@
     {"v":2,"seq":1025,"act":"stop"}
     {"v":2,"seq":1026,"act":"next"}
     {"v":2,"seq":1027,"act":"hello"}
+    {"v":2,"type":"stream","n":10,"ch":8,"rate":500,"data":"..."}   # 肌电波形流
 
 * vx / wz 归一化到 -1..1，具体量纲（m/s、rad/s、-1000..1000）由适配器决定
 * seq 可选，用于丢弃重复包
@@ -27,6 +28,7 @@ BALL_PACKET_LEN = 11
 ACTION_MOVE = "move"
 ACTION_STOP = "stop"
 ACTION_HELLO = "hello"
+STREAM_TYPE = "stream"
 
 # 不参与心跳、收到就执行一次的动作
 DISCRETE_ACTIONS = {"next", "prev", "start", "exit", "open", "close"}
@@ -115,6 +117,14 @@ def parse(data):
         version = body.get("v", PROTOCOL_VERSION)
         if version != PROTOCOL_VERSION:
             raise MessageError(f"协议版本不支持: {version}（本端为 {PROTOCOL_VERSION}）")
+
+        msg_type = str(body.get("type", "")).strip().lower()
+        if msg_type == STREAM_TYPE:
+            seq = body.get("seq")
+            if seq is not None and not isinstance(seq, int):
+                raise MessageError("seq 必须是整数")
+            return {"kind": STREAM_TYPE, "action": STREAM_TYPE, "arg": {},
+                    "seq": seq, "token": body.get("token"), "body": body}
 
         action = str(body.get("act", "")).strip().lower()
         if not action:
