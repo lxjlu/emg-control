@@ -210,7 +210,20 @@ App 侧不需要改代码：设备类型按后端返回的 `capabilities.actions
 
 ### Android App
 
-需要 Android SDK 34 与 JDK 17：
+需要 Android SDK 34 与 JDK 17。
+
+**Windows 一键脚本**（推荐，双击或在仓库根目录运行）：
+
+```bat
+build_app.bat            :: 只编译
+build_app.bat /install   :: 编译并安装到已连接的手机
+```
+
+脚本会自动查找 JDK 17（环境变量 / Android Studio 自带 JBR / 常见安装路径）和
+Android SDK，生成 `android\local.properties` 后执行 Gradle 构建，最后打印 APK
+路径与体积。找不到依赖时会提示改怎么装。
+
+**手动构建**：
 
 ```bash
 cd android
@@ -220,6 +233,9 @@ export JAVA_HOME=/path/to/jdk-17
 # 产物：app/build/outputs/apk/debug/app-debug.apk
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+
+> `android/local.properties` 被 `.gitignore` 排除，克隆后不存在；不设
+> `ANDROID_HOME` 也没写这个文件时，Gradle 会报 `SDK location not found`。
 
 Android 12+ 首次启动需授予「附近的设备」权限。
 
